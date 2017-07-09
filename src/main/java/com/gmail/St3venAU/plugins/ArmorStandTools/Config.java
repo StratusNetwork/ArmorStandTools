@@ -9,6 +9,8 @@ import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 
 class Config {
@@ -20,16 +22,17 @@ class Config {
     public static WorldGuardPlugin worldGuardPlugin;
 
     public static ItemStack helmet, chest, pants, boots, itemInHand, itemInOffHand;
-    public static boolean isVisible     = true;
-    public static boolean isSmall       = false;
-    public static boolean hasArms       = true;
-    public static boolean hasBasePlate  = false;
-    public static boolean hasGravity    = false;
-    public static String  defaultName   = "";
-    public static boolean invulnerable  = false;
-    public static boolean equipmentLock = false;
-    public static boolean allowMoveWorld = false;
-    public static boolean deactivateOnWorldChange = true;
+    public static boolean isVisible                 = true;
+    public static boolean isSmall                   = false;
+    public static boolean hasArms                   = true;
+    public static boolean hasBasePlate              = false;
+    public static boolean hasGravity                = false;
+    public static String  defaultName               = "";
+    public static boolean invulnerable              = false;
+    public static boolean equipmentLock             = false;
+    public static boolean allowMoveWorld            = false;
+    public static boolean deactivateOnWorldChange   = true;
+    public static boolean debug                     = false;
 
     public static String
             invReturned, asDropped, asVisible, isTrue, isFalse,
@@ -39,7 +42,10 @@ class Config {
             noRelPerm, noAirError, pleaseWait, appliedHead,
             invalidName, wgNoPerm, currently, headFailed,
             noCommandPerm, generalNoPerm, armorStand, none,
-            enabled, disabled, guiInUse;
+            guiInUse, notSupported, noASNearBy, closestAS,
+            hasNoCmd, hasCmd, type, command, unassignedCmd,
+            assignedCmdToAS, assignCmdError, ascmdHelp, viewCmd,
+            removeCmd, assignConsole, assignPlayer, executeCmdError;
 
     public static void reload(Main main) {
         plugin = main;
@@ -86,31 +92,46 @@ class Config {
         generalNoPerm = languageConfig.getString("generalNoPerm");
         armorStand = languageConfig.getString("armorStand");
         none = languageConfig.getString("none");
-        enabled = languageConfig.getString("enabled");
-        disabled = languageConfig.getString("disabled");
         guiInUse = languageConfig.getString("guiInUse");
+        notSupported = languageConfig.getString("notSupported");
+        noASNearBy = languageConfig.getString("noASNearBy");
+        closestAS = languageConfig.getString("closestAS");
+        hasNoCmd = languageConfig.getString("hasNoCmd");
+        hasCmd = languageConfig.getString("hasCmd");
+        type = languageConfig.getString("type");
+        command = languageConfig.getString("command");
+        unassignedCmd = languageConfig.getString("unassignedCmd");
+        assignedCmdToAS = languageConfig.getString("assignedCmdToAS");
+        assignCmdError = languageConfig.getString("assignCmdError");
+        ascmdHelp = languageConfig.getString("ascmdHelp");
+        viewCmd = languageConfig.getString("viewCmd");
+        removeCmd = languageConfig.getString("removeCmd");
+        assignConsole = languageConfig.getString("assignConsole");
+        assignPlayer = languageConfig.getString("assignPlayer");
+        executeCmdError = languageConfig.getString("executeCmdError");
     }
 
     private static void reloadMainConfig() {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
-        FileConfiguration config = plugin.getConfig();
-        helmet        = toItemStack(config.getString("helmet"));
-        chest         = toItemStack(config.getString("chest"));
-        pants         = toItemStack(config.getString("pants"));
-        boots         = toItemStack(config.getString("boots"));
-        itemInHand    = toItemStack(config.getString("inHand"));
-        itemInOffHand = toItemStack(config.getString("inOffHand"));
-        isVisible     = config.getBoolean("isVisible");
-        isSmall       = config.getBoolean("isSmall");
-        hasArms       = config.getBoolean("hasArms");
-        hasBasePlate  = config.getBoolean("hasBasePlate");
-        hasGravity    = config.getBoolean("hasGravity");
-        defaultName   = config.getString("name");
-        invulnerable  = config.getBoolean("invulnerable");
-        equipmentLock = config.getBoolean("equipmentLock");
-        allowMoveWorld = config.getBoolean("allowMovingStandsBetweenWorlds");
+        FileConfiguration config= plugin.getConfig();
+        helmet                  = toItemStack(config.getString("helmet"));
+        chest                   = toItemStack(config.getString("chest"));
+        pants                   = toItemStack(config.getString("pants"));
+        boots                   = toItemStack(config.getString("boots"));
+        itemInHand              = toItemStack(config.getString("inHand"));
+        itemInOffHand           = toItemStack(config.getString("inOffHand"));
+        isVisible               = config.getBoolean("isVisible");
+        isSmall                 = config.getBoolean("isSmall");
+        hasArms                 = config.getBoolean("hasArms");
+        hasBasePlate            = config.getBoolean("hasBasePlate");
+        hasGravity              = config.getBoolean("hasGravity");
+        defaultName             = config.getString("name");
+        invulnerable            = config.getBoolean("invulnerable");
+        equipmentLock           = config.getBoolean("equipmentLock");
+        allowMoveWorld          = config.getBoolean("allowMovingStandsBetweenWorlds");
         deactivateOnWorldChange = config.getBoolean("deactivateToolsOnWorldChange");
+        debug                   = config.getBoolean("debug", false);
         plugin.carryingArmorStand.clear();
 
         for(ArmorStandTool tool : ArmorStandTool.values()) {
@@ -126,13 +147,12 @@ class Config {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static void reloadLanguageConfig() {
         languageConfigFile = new File(plugin.getDataFolder(), "language.yml");
         languageConfig = YamlConfiguration.loadConfiguration(languageConfigFile);
         InputStream defConfigStream = plugin.getResource("language.yml");
         if (defConfigStream != null) {
-            languageConfig.setDefaults(YamlConfiguration.loadConfiguration(languageConfigFile));
+            languageConfig.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defConfigStream, StandardCharsets.UTF_8)));
         }
     }
 
@@ -149,7 +169,7 @@ class Config {
         }
         String[] split = s.split(" ");
         if(split.length > 2) {
-            System.out.println("[ArmorStandTools] Error in config.yml: Must use the format: MATERIAL_NAME dataValue. Continuing using AIR instead.");
+            plugin.getLogger().warning("Error in config.yml: Must use the format: MATERIAL_NAME dataValue. Continuing using AIR instead.");
             return new ItemStack(Material.AIR);
         }
         byte dataValue = (byte) 0;
@@ -157,14 +177,14 @@ class Config {
             try {
                 dataValue = Byte.parseByte(split[1]);
             } catch (NumberFormatException nfe) {
-                System.out.println("[ArmorStandTools] Error in config.yml: Invalid data value specifed. Continuing using data value 0 instead.");
+                plugin.getLogger().warning("Error in config.yml: Invalid data value specifed. Continuing using data value 0 instead.");
             }
         }
         Material m;
         try {
             m = Material.valueOf(split[0].toUpperCase());
         } catch(IllegalArgumentException iae) {
-            System.out.println("[ArmorStandTools] Error in config.yml: Invalid material name specifed. Continuing using AIR instead.");
+            plugin.getLogger().warning("Error in config.yml: Invalid material name specifed. Continuing using AIR instead.");
             return new ItemStack(Material.AIR);
         }
         return new ItemStack(m, 1, dataValue);

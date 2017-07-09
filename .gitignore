@@ -3,6 +3,9 @@ libs/
 out/
 ArmorStand.iml
 /bin/
+target/
 
 *.project
+.DS_Store
 .classpath
+dependency-reduced-pom.xml

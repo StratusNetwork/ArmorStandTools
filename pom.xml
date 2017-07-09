@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.St3venAU</groupId>
     <artifactId>ArmorStandTools</artifactId>
-    <version>2.2.1</version>
+    <version>2.4.1</version>
 
     <name>ArmorStandTools</name>
     <description>Armor stand manipulation tools.</description>
@@ -14,8 +14,6 @@
     <properties>
         <!-- The prefix to use when logging to the console -->
         <plugin.prefix>ArmorStandTools</plugin.prefix>
-        <!-- The main class -->
-        <plugin.mainClass>com.github.rmsy.channels.ChannelsPlugin</plugin.mainClass>
     </properties>
 
     <repositories>
@@ -37,7 +35,12 @@
         <dependency>
             <groupId>tc.oc</groupId>
             <artifactId>sportbukkit-api</artifactId>
-            <version>1.11.1-R0.1-SNAPSHOT</version>
+            <version>1.12-pre6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>tc.oc</groupId>
+            <artifactId>sportbukkit</artifactId>
+            <version>1.12-pre6-SNAPSHOT</version>
         </dependency>
 
         <dependency>

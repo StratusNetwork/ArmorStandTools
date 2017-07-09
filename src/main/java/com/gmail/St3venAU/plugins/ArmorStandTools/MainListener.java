@@ -51,15 +51,15 @@ public class MainListener implements Listener {
         this.plugin = main;
     }
 
-    @SuppressWarnings("ConstantConditions")
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
         if (event.getRightClicked() instanceof ArmorStand) {
             Player p = event.getPlayer();
+            ArmorStand as = (ArmorStand) event.getRightClicked();
             if(plugin.carryingArmorStand.containsKey(p.getUniqueId())) {
                 if (plugin.playerHasPermission(p, plugin.carryingArmorStand.get(p.getUniqueId()).getLocation().getBlock(), null)) {
                     plugin.carryingArmorStand.remove(p.getUniqueId());
-                    Utils.actionBarMsg(p, Config.asDropped);
+                    Main.nms.actionBarMsg(p, Config.asDropped);
                     event.setCancelled(true);
                     return;
                 } else {
@@ -67,112 +67,123 @@ public class MainListener implements Listener {
                 }
             }
             ArmorStandTool tool = ArmorStandTool.get(p);
-            if(tool == null) return;
-            ArmorStand as = (ArmorStand) event.getRightClicked();
-            if (!plugin.playerHasPermission(p, event.getRightClicked().getLocation().getBlock(), tool)) {
-                p.sendMessage(ChatColor.RED + Config.generalNoPerm);
-                event.setCancelled(true);
+            if(tool != null) {
+                if (!plugin.playerHasPermission(p, as.getLocation().getBlock(), tool)) {
+                    p.sendMessage(ChatColor.RED + Config.generalNoPerm);
+                    event.setCancelled(true);
+                    return;
+                }
+                double num = event.getClickedPosition().getY() - 0.05;
+                if (num < 0) {
+                    num = 0;
+                } else if (num > 2) {
+                    num = 2;
+                }
+                num = 2.0 - num;
+                double angle = num * Math.PI;
+                boolean cancel = true;
+
+                switch (tool) {
+                    case HEADX:
+                        as.setHeadPose(as.getHeadPose().setX(angle));
+                        break;
+                    case HEADY:
+                        as.setHeadPose(as.getHeadPose().setY(angle));
+                        break;
+                    case HEADZ:
+                        as.setHeadPose(as.getHeadPose().setZ(angle));
+                        break;
+                    case LARMX:
+                        as.setLeftArmPose(as.getLeftArmPose().setX(angle));
+                        break;
+                    case LARMY:
+                        as.setLeftArmPose(as.getLeftArmPose().setY(angle));
+                        break;
+                    case LARMZ:
+                        as.setLeftArmPose(as.getLeftArmPose().setZ(angle));
+                        break;
+                    case RARMX:
+                        as.setRightArmPose(as.getRightArmPose().setX(angle));
+                        break;
+                    case RARMY:
+                        as.setRightArmPose(as.getRightArmPose().setY(angle));
+                        break;
+                    case RARMZ:
+                        as.setRightArmPose(as.getRightArmPose().setZ(angle));
+                        break;
+                    case LLEGX:
+                        as.setLeftLegPose(as.getLeftLegPose().setX(angle));
+                        break;
+                    case LLEGY:
+                        as.setLeftLegPose(as.getLeftLegPose().setY(angle));
+                        break;
+                    case LLEGZ:
+                        as.setLeftLegPose(as.getLeftLegPose().setZ(angle));
+                        break;
+                    case RLEGX:
+                        as.setRightLegPose(as.getRightLegPose().setX(angle));
+                        break;
+                    case RLEGY:
+                        as.setRightLegPose(as.getRightLegPose().setY(angle));
+                        break;
+                    case RLEGZ:
+                        as.setRightLegPose(as.getRightLegPose().setZ(angle));
+                        break;
+                    case BODYX:
+                        as.setBodyPose(as.getBodyPose().setX(angle));
+                        break;
+                    case BODYY:
+                        as.setBodyPose(as.getBodyPose().setY(angle));
+                        break;
+                    case BODYZ:
+                        as.setBodyPose(as.getBodyPose().setZ(angle));
+                        break;
+                    case MOVEX:
+                        as.teleport(as.getLocation().add(0.05 * (p.isSneaking() ? -1 : 1), 0.0, 0.0));
+                        break;
+                    case MOVEY:
+                        as.teleport(as.getLocation().add(0.0, 0.05 * (p.isSneaking() ? -1 : 1), 0.0));
+                        break;
+                    case MOVEZ:
+                        as.teleport(as.getLocation().add(0.0, 0.0, 0.05 * (p.isSneaking() ? -1 : 1)));
+                        break;
+                    case ROTAT:
+                        Location l = as.getLocation();
+                        l.setYaw(((float) num) * 180F);
+                        as.teleport(l);
+                        break;
+                    case GUI:
+                        new ArmorStandGUI(plugin, as, p);
+                        break;
+                    default:
+                        cancel = tool == ArmorStandTool.SUMMON || tool == ArmorStandTool.SAVE || event.isCancelled();
+                }
+                event.setCancelled(cancel);
                 return;
             }
-            double num = event.getClickedPosition().getY() - 0.05;
-            if (num < 0) {
-                num = 0;
-            } else if (num > 2) {
-                num = 2;
+            if(!p.isSneaking() && Main.nms.supportsScoreboardTags()) {
+                ArmorStandCmd asCmd = ArmorStandCmd.fromAS(as);
+                if (asCmd != null) {
+                    event.setCancelled(true);
+                    if (Utils.hasPermissionNode(p, "astools.ascmd.execute")) {
+                        if (!asCmd.execute(p)) {
+                            p.sendMessage(Config.executeCmdError);
+                        }
+                    }
+                }
             }
-            num = 2.0 - num;
-            double angle = num * Math.PI;
-            boolean cancel = true;
-
-            switch(tool) {
-                case HEADX:
-                    as.setHeadPose(as.getHeadPose().setX(angle));
-                    break;
-                case HEADY:
-                    as.setHeadPose(as.getHeadPose().setY(angle));
-                    break;
-                case HEADZ:
-                    as.setHeadPose(as.getHeadPose().setZ(angle));
-                    break;
-                case LARMX:
-                    as.setLeftArmPose(as.getLeftArmPose().setX(angle));
-                    break;
-                case LARMY:
-                    as.setLeftArmPose(as.getLeftArmPose().setY(angle));
-                    break;
-                case LARMZ:
-                    as.setLeftArmPose(as.getLeftArmPose().setZ(angle));
-                    break;
-                case RARMX:
-                    as.setRightArmPose(as.getRightArmPose().setX(angle));
-                    break;
-                case RARMY:
-                    as.setRightArmPose(as.getRightArmPose().setY(angle));
-                    break;
-                case RARMZ:
-                    as.setRightArmPose(as.getRightArmPose().setZ(angle));
-                    break;
-                case LLEGX:
-                    as.setLeftLegPose(as.getLeftLegPose().setX(angle));
-                    break;
-                case LLEGY:
-                    as.setLeftLegPose(as.getLeftLegPose().setY(angle));
-                    break;
-                case LLEGZ:
-                    as.setLeftLegPose(as.getLeftLegPose().setZ(angle));
-                    break;
-                case RLEGX:
-                    as.setRightLegPose(as.getRightLegPose().setX(angle));
-                    break;
-                case RLEGY:
-                    as.setRightLegPose(as.getRightLegPose().setY(angle));
-                    break;
-                case RLEGZ:
-                    as.setRightLegPose(as.getRightLegPose().setZ(angle));
-                    break;
-                case BODYX:
-                    as.setBodyPose(as.getBodyPose().setX(angle));
-                    break;
-                case BODYY:
-                    as.setBodyPose(as.getBodyPose().setY(angle));
-                    break;
-                case BODYZ:
-                    as.setBodyPose(as.getBodyPose().setZ(angle));
-                    break;
-                case MOVEX:
-                    as.teleport(as.getLocation().add(0.05 * (p.isSneaking() ? -1 : 1), 0.0, 0.0));
-                    break;
-                case MOVEY:
-                    as.teleport(as.getLocation().add(0.0, 0.05 * (p.isSneaking() ? -1 : 1), 0.0));
-                    break;
-                case MOVEZ:
-                    as.teleport(as.getLocation().add(0.0, 0.0, 0.05 * (p.isSneaking() ? -1 : 1)));
-                    break;
-                case ROTAT:
-                    Location l = as.getLocation();
-                    l.setYaw(((float) num) * 180F);
-                    as.teleport(l);
-                    break;
-                case GUI:
-                    new ArmorStandGUI(plugin, as, p);
-                    break;
-                default:
-                    cancel = tool == ArmorStandTool.SUMMON || tool == ArmorStandTool.SAVE  || event.isCancelled();
-            }
-            event.setCancelled(cancel);
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         if (event.getRightClicked() instanceof ItemFrame && ArmorStandTool.isHoldingTool(event.getPlayer())) {
             event.setCancelled(true);
+            //noinspection deprecation
             event.getPlayer().updateInventory();
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         if (ArmorStandTool.isHoldingTool(event.getPlayer())) {
@@ -180,7 +191,6 @@ public class MainListener implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player p = event.getPlayer();
@@ -188,11 +198,11 @@ public class MainListener implements Listener {
             ArmorStand as = plugin.carryingArmorStand.get(p.getUniqueId());
             if (as == null || as.isDead()) {
                 plugin.carryingArmorStand.remove(p.getUniqueId());
-                Utils.actionBarMsg(p, Config.asDropped);
+                Main.nms.actionBarMsg(p, Config.asDropped);
                 return;
             }
             as.teleport(Utils.getLocationFacing(event.getTo()));
-            Utils.actionBarMsg(p, Config.carrying);
+            Main.nms.actionBarMsg(p, Config.carrying);
         }
     }
 
@@ -205,7 +215,7 @@ public class MainListener implements Listener {
             final ArmorStand as = plugin.carryingArmorStand.get(uuid);
             if (as == null || as.isDead()) {
                 plugin.carryingArmorStand.remove(p.getUniqueId());
-                Utils.actionBarMsg(p, Config.asDropped);
+                Main.nms.actionBarMsg(p, Config.asDropped);
                 return;
             }
             if(sameWorld || Config.allowMoveWorld) {
@@ -213,10 +223,11 @@ public class MainListener implements Listener {
                     @Override
                     public void run() {
                         as.teleport(Utils.getLocationFacing(p.getLocation()));
-                        Utils.actionBarMsg(p, Config.carrying);
+                        Main.nms.actionBarMsg(p, Config.carrying);
                     }
                 }.runTaskLater(plugin, 1L);
             } else {
+                plugin.returnArmorStand(plugin.carryingArmorStand.get(uuid));
                 plugin.carryingArmorStand.remove(uuid);
                 if (plugin.savedInventories.containsKey(uuid)) {
                     plugin.restoreInventory(p);
@@ -242,7 +253,6 @@ public class MainListener implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onCraftItem(CraftItemEvent event) {
         if (event.isCancelled()) return;
@@ -251,13 +261,13 @@ public class MainListener implements Listener {
         for(ItemStack is : inventory.getContents()) {
             if(ArmorStandTool.isTool(is)) {
                 event.setCancelled(true);
+                //noinspection deprecation
                 p.updateInventory();
                 return;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.isCancelled() || !(event.getWhoClicked() instanceof Player)) return;
@@ -265,24 +275,26 @@ public class MainListener implements Listener {
         ItemStack item = event.getCurrentItem();
         if(event.getInventory().getHolder() != p && ArmorStandTool.isTool(item)) {
             event.setCancelled(true);
+            //noinspection deprecation
             p.updateInventory();
             return;
         }
         if(event.getAction() == InventoryAction.HOTBAR_SWAP || event.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD) {
             if(Utils.hasItems(p)) {
                 event.setCancelled(true);
+                //noinspection deprecation
                 p.updateInventory();
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
         if (event.isCancelled() || !(event.getWhoClicked() instanceof Player)) return;
         final Player p = (Player) event.getWhoClicked();
         if (event.getInventory().getHolder() != p && Utils.containsItems(event.getNewItems().values())) {
             event.setCancelled(true);
+            //noinspection deprecation
             p.updateInventory();
         }
     }
@@ -306,14 +318,13 @@ public class MainListener implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         final Player p = event.getPlayer();
         if(plugin.carryingArmorStand.containsKey(p.getUniqueId())) {
             if (plugin.playerHasPermission(p, plugin.carryingArmorStand.get(p.getUniqueId()).getLocation().getBlock(), null)) {
                 plugin.carryingArmorStand.remove(p.getUniqueId());
-                Utils.actionBarMsg(p, Config.asDropped);
+                Main.nms.actionBarMsg(p, Config.asDropped);
                 p.setMetadata("lastDrop", new FixedMetadataValue(plugin, System.currentTimeMillis()));
                 event.setCancelled(true);
             } else {
@@ -334,11 +345,12 @@ public class MainListener implements Listener {
             }
             Location l = Utils.getLocationFacing(p.getLocation());
             plugin.pickUpArmorStand(spawnArmorStand(l), p, true);
-            Utils.actionBarMsg(p, Config.carrying);
+            Main.nms.actionBarMsg(p, Config.carrying);
         }
         new BukkitRunnable() {
             @Override
             public void run() {
+                //noinspection deprecation
                 p.updateInventory();
             }
         }.runTaskLater(plugin, 1L);
@@ -347,7 +359,7 @@ public class MainListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if(event.getEntity() instanceof ArmorStand) {
-            if(event.getEntity().isInvulnerable()) {
+            if(Main.nms.isInvulnerable((ArmorStand) event.getEntity())) {
                 event.setCancelled(true);
             }
             if(event.getDamager() instanceof Player && ArmorStandTool.isHoldingTool((Player) event.getDamager())) {
@@ -374,8 +386,10 @@ public class MainListener implements Listener {
         as.setChestplate(Config.chest);
         as.setLeggings(Config.pants);
         as.setBoots(Config.boots);
-        as.getEquipment().setItemInMainHand(Config.itemInHand);
-        as.getEquipment().setItemInOffHand(Config.itemInOffHand);
+        Main.nms.setItemInMainHand(as, Config.itemInHand);
+        if(Main.nms.hasOffHand()) {
+            Main.nms.setItemInOffHand(as, Config.itemInOffHand);
+        }
         as.setVisible(Config.isVisible);
         as.setSmall(Config.isSmall);
         as.setArms(Config.hasArms);
@@ -385,8 +399,8 @@ public class MainListener implements Listener {
             as.setCustomName(Config.defaultName);
             as.setCustomNameVisible(true);
         }
-        NBT.setSlotsDisabled(as, Config.equipmentLock);
-        as.setInvulnerable(Config.invulnerable);
+        Main.nms.setSlotsDisabled(as, Config.equipmentLock);
+        Main.nms.setInvulnerable(as, Config.invulnerable);
         return as;
     }
 
@@ -398,7 +412,6 @@ public class MainListener implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onSignChange(final SignChangeEvent event) {
         if(event.getBlock().hasMetadata("armorStand")) {
@@ -454,6 +467,7 @@ public class MainListener implements Listener {
             b.removeMetadata("setName", plugin);
             b.removeMetadata("setSkull", plugin);
             b.setType(Material.AIR);
+            //noinspection deprecation
             b.setData((byte) 0);
         }
     }
@@ -483,9 +497,16 @@ public class MainListener implements Listener {
         PermissionAttachment attachment = p.addAttachment(plugin);
         attachment.setPermission("astools.command", true);
         attachment.setPermission("astools.use", true);
+        attachment.setPermission("astools.summon", true);
         attachment.setPermission("astools.clone", true);
+        attachment.setPermission("astools.head", true);
         attachment.setPermission("astools.reload", true);
         attachment.setPermission("astools.cmdblock", true);
+        attachment.setPermission("astools.ascmd.view", true);
+        attachment.setPermission("astools.ascmd.remove", true);
+        attachment.setPermission("astools.ascmd.assign.player", true);
+        attachment.setPermission("astools.ascmd.assign.console", true);
+        attachment.setPermission("astools.ascmd.execute", true);
     }*/
 
 }
