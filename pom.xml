@@ -6,7 +6,7 @@
 
     <groupId>com.gmail.St3venAU</groupId>
     <artifactId>ArmorStandTools</artifactId>
-    <version>2.4.1</version>
+    <version>1.12.2-SNAPSHOT</version>
 
     <name>ArmorStandTools</name>
     <description>Armor stand manipulation tools.</description>
