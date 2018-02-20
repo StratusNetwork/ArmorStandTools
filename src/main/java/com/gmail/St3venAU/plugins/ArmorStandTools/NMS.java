@@ -214,7 +214,7 @@ abstract class NMS {
         if(nmsClassString.equals("ChatSerializer")) {
             nmsClassString = chatSerializerFieldName;
         }
-        return Class.forName("net.minecraft.server." + nmsVersion + "." + nmsClassString);
+        return Class.forName("net.minecraft.server." + nmsClassString);
     }
 
     void sendPacket(Player p, Object packet) {
